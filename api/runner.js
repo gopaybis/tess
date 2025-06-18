@@ -1,20 +1,33 @@
-export default async function handler(req, res) {
-  const rawUrl = req.query.url;
+export const config = {
+  runtime: "edge"
+};
+
+export default async function handler(req) {
+  const { searchParams } = new URL(req.url);
+  const rawUrl = searchParams.get("url");
 
   if (!rawUrl || !rawUrl.startsWith("https://")) {
-    return res.status(400).send("❌ Parameter ?url= wajib");
+    return new Response("❌ Parameter ?url=https://... wajib", { status: 400 });
   }
 
   try {
     const code = await fetch(rawUrl).then(r => r.text());
-    const fn = new Function("req", code + "\n return handler(req);");
+
+    // Eksekusi sebagai fungsi biasa (tanpa export default)
+    const fn = new Function("req", `${code}\nreturn handler(req);`);
 
     const result = await fn(req);
 
-    return typeof result === "object"
-      ? res.status(200).json(result)
-      : res.status(200).send(result);
+    return result instanceof Response
+      ? result
+      : new Response(JSON.stringify(result), {
+          status: 200,
+          headers: { "Content-Type": "application/json" }
+        });
   } catch (err) {
-    return res.status(500).send("⚠️ Gagal menjalankan: " + err.message);
+    return new Response("⚠️ Gagal menjalankan: " + err.message, {
+      status: 500,
+      headers: { "Content-Type": "text/plain" }
+    });
   }
 }
