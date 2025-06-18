@@ -1,0 +1,8 @@
+{
+  "name": "vercel-runner-node",
+  "version": "1.0.0",
+  "main": "api/runner.js",
+  "scripts": {
+    "start": "vercel dev"
+  }
+}
